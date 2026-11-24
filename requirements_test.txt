@@ -1,0 +1,2 @@
+# Home Assistant and its pytest plugin, pinned together (this one is Home Assistant 2026.2.3)
+pytest-homeassistant-custom-component==0.13.316

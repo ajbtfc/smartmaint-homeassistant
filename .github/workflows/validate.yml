@@ -1,0 +1,33 @@
+name: Validate
+
+# Home Assistant's own checks (hassfest: manifest, translations, config flow) and HACS's (that it
+# installs from HACS). Weekly too, so a Home Assistant change that breaks it shows up.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # a new integration has no entry in home-assistant/brands yet
+          ignore: brands

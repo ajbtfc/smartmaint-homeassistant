@@ -1,0 +1,14 @@
+{
+  "domain": "ninestitch",
+  "name": "Ninestitch",
+  "after_dependencies": ["mobile_app", "person"],
+  "codeowners": ["@ajbtfc"],
+  "config_flow": true,
+  "dependencies": ["persistent_notification"],
+  "documentation": "https://github.com/ajbtfc/smartmaint-homeassistant",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ajbtfc/smartmaint-homeassistant/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
