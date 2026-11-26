@@ -1,0 +1,72 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Ninestitch",
+        "description": "In Ninestitch, open Household → Home Assistant → Connect Home Assistant. Type the code it shows (it works once, for 10 minutes).",
+        "data": {
+          "code": "Pairing code",
+          "name": "Name for this connection",
+          "url": "Ninestitch server"
+        },
+        "data_description": {
+          "code": "Like ABCD-EFGH.",
+          "name": "How this Home Assistant appears in Ninestitch.",
+          "url": "Leave as it is unless you use a test server."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Connect {household} again",
+        "description": "This connection was disconnected in Ninestitch, so readings and to-do lists have stopped. Make a new code in Ninestitch (Household → Home Assistant → Connect Home Assistant) and type it here. Readings that waited meanwhile are sent once it's connected.",
+        "data": {
+          "code": "Pairing code"
+        }
+      }
+    },
+    "error": {
+      "invalid_code": "That code isn't right, or it was already used. Check it in Ninestitch.",
+      "expired_code": "That code has expired (they last 10 minutes). Make a new one in Ninestitch.",
+      "rate_limited": "Too many wrong codes. Wait a few minutes, then try again.",
+      "plan_required": "Home Assistant is part of Ninestitch Plus. Start the free trial or upgrade in Ninestitch, then make a new code.",
+      "cannot_connect": "Couldn't reach Ninestitch. Check the internet connection and try again.",
+      "unknown": "Something went wrong. Try again."
+    },
+    "abort": {
+      "already_configured": "This household is already connected.",
+      "reauth_successful": "Connected again.",
+      "wrong_household": "That code is for a different household. Make the code in the household that was connected."
+    }
+  },
+  "issues": {
+    "plan_required": {
+      "title": "Ninestitch: Home Assistant is paused",
+      "description": "{household} isn't on Ninestitch Plus, so readings, to-do lists and notifications are paused. Readings wait here (up to 24 hours) and are sent once the household is back on Plus. Readings you log yourself in Ninestitch keep working."
+    }
+  },
+  "entity": {
+    "todo": {
+      "everyone": {
+        "name": "Everyone"
+      }
+    },
+    "calendar": {
+      "due": {
+        "name": "Due"
+      }
+    },
+    "sensor": {
+      "open_jobs": {
+        "name": "Open jobs",
+        "unit_of_measurement": "jobs"
+      },
+      "overdue_jobs": {
+        "name": "Overdue jobs",
+        "unit_of_measurement": "jobs"
+      },
+      "queued_readings": {
+        "name": "Readings waiting to send",
+        "unit_of_measurement": "readings"
+      }
+    }
+  }
+}
