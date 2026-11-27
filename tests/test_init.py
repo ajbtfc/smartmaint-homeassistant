@@ -92,6 +92,7 @@ async def test_catalogue_uploaded_on_start_with_people_and_no_values_of_unlinked
     [uploaded] = calls(aioclient_mock, "/ha-catalogue")
     ids = {e["entity_id"]: e for e in uploaded["entities"]}
     assert {"sensor.outback_odometer", "binary_sensor.water_heater_leak", "climate.hallway", "person.sam"} <= set(ids)
+    assert not any(e.startswith("sensor.ninestitch_") for e in ids), "not our own sensors"
     assert ids["sensor.outback_odometer"]["unit"] == "mi"
     # readings: only linked entities, and the odometer's current value is sent on start
     sent = [r for batch in calls(aioclient_mock, "/ha-readings") for r in batch["readings"]]
@@ -240,3 +241,41 @@ async def test_diagnostics_leave_out_the_token(
     assert diag["entry"]["token"] == "**REDACTED**"
     assert TOKEN not in str(diag)
     assert "sensor.outback_odometer" in diag["listening_to"]
+
+
+async def test_a_new_helper_reaches_ninestitch_without_waiting_a_day(
+    hass: HomeAssistant, entry: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A utility meter made after pairing (#113): the entity list goes again after a minute."""
+    from homeassistant.helpers import entity_registry as er
+
+    await _setup(hass, entry, aioclient_mock)
+    assert len(calls(aioclient_mock, "/ha-catalogue")) == 1
+    er.async_get(hass).async_get_or_create(
+        "sensor", "utility_meter", "hvac-filter", suggested_object_id="kitchen_my_ecobee_hvac_filter_runtime"
+    )
+    hass.states.async_set(
+        "sensor.kitchen_my_ecobee_hvac_filter_runtime",
+        "1234",
+        {"unit_of_measurement": "min", "device_class": "duration"},
+    )
+    hass.states.async_set("sensor.another_new_one", "1", {})  # a burst: one upload covers both
+    await hass.async_block_till_done()
+    assert len(calls(aioclient_mock, "/ha-catalogue")) == 1, "not at once"
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+    await hass.async_block_till_done()
+    uploads = calls(aioclient_mock, "/ha-catalogue")
+    assert len(uploads) == 2
+    meter = next(e for e in uploads[1]["entities"] if e["entity_id"] == "sensor.kitchen_my_ecobee_hvac_filter_runtime")
+    assert meter["unit"] == "min" and meter["device_class"] == "duration"
+
+
+async def test_ordinary_state_changes_dont_upload_the_list(
+    hass: HomeAssistant, entry: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
+    await _setup(hass, entry, aioclient_mock)
+    hass.states.async_set("sensor.living_room_temperature", "23.0", {"unit_of_measurement": "°C"})
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+    await hass.async_block_till_done()
+    assert len(calls(aioclient_mock, "/ha-catalogue")) == 1

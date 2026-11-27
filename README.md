@@ -40,7 +40,8 @@ Assistant's notifications. Which kinds are sent is set in Ninestitch.
 ## How it behaves
 
 - **Only linked entities send values.** Home Assistant uploads a list of its sensors, binary sensors,
-  thermostats and people (names, areas, units, current states) on start and daily, for the setup
+  thermostats and people (names, areas, units, current states) on start, a minute after entities are
+  added or renamed, and daily, for the setup
   screen. Readings go only for entities you linked in Ninestitch; changes there apply within a minute.
 - **Not chatty.** Changes are sent at most once a minute per entity, and the last state is never
   dropped. Odometers and run hours are sent at most hourly, or sooner on a 1% change. `unknown` and
