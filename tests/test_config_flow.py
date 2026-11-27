@@ -60,6 +60,8 @@ async def test_pairing_code_becomes_a_token_and_the_household_is_the_title(
         (429, error("pairing_rate_limited"), "rate_limited"),
         (402, error("plan_requires_live_sensors"), "plan_required"),
         (503, error("not_configured"), "cannot_connect"),
+        # production before the Home Assistant endpoints are released there (Supabase's own 404)
+        (404, {"code": "NOT_FOUND", "message": "Requested function was not found"}, "server_not_ready"),
     ],
 )
 async def test_what_went_wrong_is_said_plainly(
@@ -126,3 +128,20 @@ def test_codes_are_typed_however() -> None:
     assert normalise_code(" abcd-efgh ") == "ABCD-EFGH"
     assert normalise_code("ABCDEFGH") == "ABCD-EFGH"
     assert normalise_code("abcd efgh") == "ABCD-EFGH"
+
+
+async def test_a_test_server_can_be_used_in_advanced_mode(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    staging = "https://lkcxpgtgtvoieqcuaygh.supabase.co"
+    aioclient_mock.post(f"{staging}/functions/v1/ha-pair", json=PAIRED)
+    aioclient_mock.get(f"{staging}/functions/v1/ha-feed", json=feed())
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER, "show_advanced_options": True}
+    )
+    assert "url" in result["data_schema"].schema
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"code": "ABCD-EFGH", "url": staging + "/"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"]["url"] == staging
