@@ -1,7 +1,8 @@
 """The entity catalogue: what Home Assistant could send, for Ninestitch's setup screen.
 
 Names, areas, units, device classes and current states of sensors, binary sensors and thermostats.
-Uploaded on start and daily. Values are sent only for entities linked in Ninestitch.
+Uploaded on start, a minute after entities are added, renamed or removed (#113), and daily.
+Values are sent only for entities linked in Ninestitch.
 """
 
 from __future__ import annotations
@@ -25,8 +26,8 @@ def build_catalogue(hass: HomeAssistant) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for state in hass.states.async_all(CATALOGUE_DOMAINS):
         entry = ents.async_get(state.entity_id)
-        if entry is not None and (entry.disabled_by or entry.hidden_by):
-            continue
+        if entry is not None and (entry.disabled_by or entry.hidden_by or entry.platform == "ninestitch"):
+            continue  # hidden, disabled, or one of our own (open jobs…)
         area_id = entry.area_id if entry else None
         if area_id is None and entry and entry.device_id and (device := devs.async_get(entry.device_id)):
             area_id = device.area_id

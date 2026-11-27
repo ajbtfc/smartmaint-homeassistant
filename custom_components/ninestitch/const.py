@@ -20,6 +20,8 @@ CONF_DEVICE_ID: Final = "device_id"
 
 FEED_INTERVAL: Final = timedelta(seconds=60)
 CATALOGUE_INTERVAL: Final = timedelta(hours=24)
+# after entities are added or renamed, upload the catalogue again once things settle (#113)
+CATALOGUE_REFRESH_DELAY: Final = 60.0
 QUEUE_TICK: Final = timedelta(seconds=30)
 RUNTIME_TICK: Final = timedelta(minutes=15)
 

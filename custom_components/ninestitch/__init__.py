@@ -12,16 +12,29 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 
 from .api import AuthFailed, NinestitchApi, NinestitchError
 from .catalogue import build_catalogue
-from .const import CATALOGUE_INTERVAL, CONF_TOKEN, CONF_URL, DEFAULT_URL, DOMAIN, PLATFORMS, QUEUE_TICK
+from .const import (
+    CATALOGUE_DOMAINS,
+    CATALOGUE_INTERVAL,
+    CATALOGUE_REFRESH_DELAY,
+    CONF_TOKEN,
+    CONF_URL,
+    DEFAULT_URL,
+    DOMAIN,
+    PLATFORMS,
+    QUEUE_TICK,
+)
 from .coordinator import NinestitchCoordinator
 from .listener import ReadingListener
 from .queue import ReadingQueue
@@ -94,10 +107,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: NinestitchConfigEntry) -
         async_track_time_interval(hass, _async_upload_catalogue, CATALOGUE_INTERVAL),
     ]
 
+    # Entities added, renamed or removed after start (a new helper, say) reach Ninestitch's setup
+    # screen within a couple of minutes, not the next day (#113). Changes come in bursts (an
+    # integration adding a device's entities), so one upload covers them.
+    refresh = Debouncer(
+        hass, _LOGGER, cooldown=CATALOGUE_REFRESH_DELAY, immediate=False, function=_async_upload_catalogue
+    )
+    entry.async_on_unload(refresh.async_cancel)
+
+    def _relevant(entity_id: str, domains: tuple[str, ...]) -> bool:
+        if entity_id.split(".", 1)[0] not in domains:
+            return False
+        reg = er.async_get(hass).async_get(entity_id)
+        return reg is None or reg.platform != DOMAIN  # not our own sensors
+
+    @callback
+    def _registry_changed(event: Event[er.EventEntityRegistryUpdatedData]) -> None:
+        if _relevant(event.data["entity_id"], (*CATALOGUE_DOMAINS, "person")):
+            refresh.async_schedule_call()
+
+    @callback
+    def _state_added(event: Event) -> None:
+        # entities without a registry entry (YAML templates) only show up as a first state
+        if event.data.get("old_state") is None and event.data.get("new_state") is not None:
+            if _relevant(event.data["entity_id"], CATALOGUE_DOMAINS):
+                refresh.async_schedule_call()
+
     @callback
     def _started(_: HomeAssistant) -> None:
         # once everything has loaded: integrations add entities while Home Assistant starts
         entry.async_create_background_task(hass, _async_upload_catalogue(), "ninestitch_catalogue")
+        entry.async_on_unload(hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, _registry_changed))
+        entry.async_on_unload(hass.bus.async_listen(EVENT_STATE_CHANGED, _state_added))
 
     unsubs.append(async_at_started(hass, _started))
     for unsub in unsubs:
