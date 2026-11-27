@@ -24,12 +24,13 @@
       }
     },
     "error": {
-      "invalid_code": "That code isn't right, or it was already used. Check it in Ninestitch.",
+      "invalid_code": "That code isn't right, or it was already used. Check it in Ninestitch. A code made in a test (staging) version only works with that server's address (Advanced mode).",
       "expired_code": "That code has expired (they last 10 minutes). Make a new one in Ninestitch.",
       "rate_limited": "Too many wrong codes. Wait a few minutes, then try again.",
       "plan_required": "Home Assistant is part of Ninestitch Plus. Start the free trial or upgrade in Ninestitch, then make a new code.",
       "cannot_connect": "Couldn't reach Ninestitch. Check the internet connection and try again.",
-      "unknown": "Something went wrong. Try again."
+      "unknown": "Something went wrong. Try again.",
+      "server_not_ready": "This Ninestitch server doesn't offer Home Assistant yet. If you made the code in a test (staging) version of Ninestitch, turn on Advanced mode in your Home Assistant profile, then add the integration again and enter that server's address."
     },
     "abort": {
       "already_configured": "This household is already connected.",

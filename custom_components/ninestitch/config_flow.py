@@ -60,6 +60,10 @@ class NinestitchConfigFlow(ConfigFlow, domain=DOMAIN):
         except CannotConnect:
             return None, "cannot_connect"
         except NinestitchError as err:
+            if err.status == 404:
+                # this Ninestitch server doesn't have Home Assistant (yet): not released there, or
+                # the wrong address
+                return None, "server_not_ready"
             return None, ERRORS.get(err.code, "unknown")
         except Exception:  # noqa: BLE001
             _LOGGER.exception("Unexpected error pairing with Ninestitch")
