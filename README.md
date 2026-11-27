@@ -73,3 +73,7 @@ pytest -q && ruff check . && ruff format --check .
 
 The tests run against a fake Ninestitch (`tests/conftest.py`), shaped like the real endpoints in
 `supabase/functions/ha-*` of the Ninestitch repository.
+
+## License
+
+MIT, see [LICENSE](LICENSE). This covers the integration only.
